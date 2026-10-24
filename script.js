@@ -74,7 +74,7 @@ const DEFAULT_LINKS = [
 ];
 
 const settings = Object.assign(
-  { name: 'Aariv', seconds: true, showApod: true },
+  { name: 'Aariv', hour24: false, seconds: true, showApod: true },
   store.get('pulse.settings', {})
 );
 
@@ -111,6 +111,8 @@ function saveSettings() {
 function applySettings() {
   greetingEl.textContent = `Welcome back, ${settings.name || 'friend'}`;
   clockSecondsEl.hidden = !settings.seconds;
+  clockMeridiemEl.hidden = settings.hour24;
+  tick();
   updateApodVisibility();
 }
 
@@ -119,8 +121,12 @@ function applySettings() {
 function tick() {
   const now = new Date();
   let hours = now.getHours();
-  clockMeridiemEl.textContent = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12 || 12;
+  if (settings.hour24) {
+    hours = String(hours).padStart(2, '0');
+  } else {
+    clockMeridiemEl.textContent = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+  }
   clockTimeEl.textContent = `${hours}:${String(now.getMinutes()).padStart(2, '0')}`;
   clockSecondsEl.textContent = String(now.getSeconds()).padStart(2, '0');
 }
@@ -576,11 +582,66 @@ function setupApodUI() {
 
 /* ------------------------------ settings UI ------------------------------ */
 
+const linksStatusEl = $('#links-status');
+
+function setLinksStatus(msg, isError = false) {
+  linksStatusEl.textContent = msg;
+  linksStatusEl.hidden = !msg;
+  linksStatusEl.classList.toggle('is-error', isError);
+}
+
+function exportLinks() {
+  const json = JSON.stringify(links.map(({ name, url }) => ({ name, url })), null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download = 'pulse-links.json';
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  setLinksStatus(`Exported ${links.length} link${links.length === 1 ? '' : 's'}.`);
+}
+
+async function importLinks(file) {
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch {
+    return setLinksStatus('That file is not valid JSON.', true);
+  }
+  if (!Array.isArray(data)) {
+    return setLinksStatus('Expected a JSON list of {"name", "url"} entries.', true);
+  }
+
+  const imported = [];
+  const seen = new Set();
+  for (const item of data) {
+    const name = item && typeof item.name === 'string' ? item.name.trim().slice(0, 30) : '';
+    const url = item && typeof item.url === 'string' ? normalizeUrl(item.url) : null;
+    if (!name || !url || seen.has(url.toLowerCase())) continue;
+    seen.add(url.toLowerCase());
+    imported.push({ name, url });
+  }
+  if (!imported.length) return setLinksStatus('No valid links found in that file.', true);
+
+  links.length = 0;
+  links.push(...imported);
+  saveLinks();
+  renderLinks();
+  const skipped = data.length - imported.length;
+  setLinksStatus(
+    `Imported ${imported.length} link${imported.length === 1 ? '' : 's'}` +
+      (skipped ? ` (${skipped} skipped).` : '.')
+  );
+}
+
 function setupSettingsDialog() {
   $('#settings-btn').addEventListener('click', () => {
     $('#setting-name').value = settings.name;
+    $('#setting-24h').checked = settings.hour24;
     $('#setting-seconds').checked = settings.seconds;
     $('#setting-apod').checked = settings.showApod;
+    setLinksStatus('');
     settingsDialog.showModal();
     $('#setting-name').focus();
   });
@@ -588,12 +649,21 @@ function setupSettingsDialog() {
   $('#settings-form').addEventListener('submit', (e) => {
     e.preventDefault();
     settings.name = $('#setting-name').value.trim() || 'Aariv';
+    settings.hour24 = $('#setting-24h').checked;
     settings.seconds = $('#setting-seconds').checked;
     settings.showApod = $('#setting-apod').checked;
     saveSettings();
     applySettings();
     if (settings.showApod) initApod();
     settingsDialog.close();
+  });
+
+  $('#export-links').addEventListener('click', exportLinks);
+  $('#import-links').addEventListener('click', () => $('#import-file').click());
+  $('#import-file').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // allow re-importing the same file
+    if (file) importLinks(file);
   });
 
   $('#reset-links').addEventListener('click', () => {

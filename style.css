@@ -476,6 +476,29 @@ kbd {
   text-align: left;
 }
 
+.settings-links {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+}
+
+.settings-subhead {
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.settings-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.settings-status {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.settings-status.is-error { color: var(--danger); }
+
 .apod-meta {
   font-size: 0.8rem;
   color: var(--text-dim);
