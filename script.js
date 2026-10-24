@@ -43,12 +43,9 @@ const store = (() => {
    and paste it here for higher rate limits. */
 const NASA_API_KEY = 'DEMO_KEY';
 
-const apodEndpoints = (date) => {
+const apodUrl = (date) => {
   const withDate = date ? `&date=${encodeURIComponent(date)}` : '';
-  return [
-    `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(NASA_API_KEY)}${withDate}`,
-    `https://go-apod.herokuapp.com/apod?api_key=${encodeURIComponent(NASA_API_KEY)}${withDate}`,
-  ];
+  return `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(NASA_API_KEY)}${withDate}`;
 };
 
 const todayISO = () => {
@@ -428,7 +425,11 @@ const starfield = (() => {
 /* ------------------------------ APOD ------------------------------ */
 
 const APOD_CACHE_KEY = 'pulse.apod.cache';
+const APOD_RETRY_DELAY = 90 * 1000;
 let apodData = store.get(APOD_CACHE_KEY, null);
+let apodStatus = null; // 'loading' | 'failed' — only used when no data is available
+let apodRetryTimer = null;
+let apodFetchBusy = false;
 
 async function fetchJSON(url, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -443,18 +444,18 @@ async function fetchJSON(url, timeoutMs = 8000) {
 }
 
 async function fetchApod(date) {
-  // Both sources can be flaky (NASA's DEMO_KEY sometimes returns 500),
-  // so try each endpoint twice with a short backoff between attempts.
-  const urls = apodEndpoints(date).flatMap((url) => [url, url]);
+  // NASA's public DEMO_KEY is shared and rate-limited (HTTP 429), and the API
+  // occasionally returns a transient 500, so give each request a few
+  // spaced-out attempts before giving up.
   let delay = 900;
-  for (let i = 0; i < urls.length; i++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const data = await fetchJSON(urls[i]);
+      const data = await fetchJSON(apodUrl(date));
       if (data && (data.url || data.title)) return data;
       throw new Error('Unexpected payload');
     } catch (err) {
-      console.warn('[pulse] APOD attempt failed:', urls[i], err);
-      if (i < urls.length - 1) {
+      console.warn(`[pulse] APOD attempt ${attempt + 1}/3 failed:`, err);
+      if (attempt < 2) {
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay = Math.min(delay * 2, 2200);
       }
@@ -464,11 +465,32 @@ async function fetchApod(date) {
 }
 
 function updateApodVisibility() {
-  apodEl.hidden = !(settings.showApod && apodData && apodData.title);
+  // Card is visible whenever the panel is enabled and we have data, are
+  // loading, or have a failure note to show. The View button only makes
+  // sense once real data exists.
+  apodEl.hidden = !(settings.showApod && ((apodData && apodData.title) || apodStatus));
+  $('#apod-open').hidden = !apodData;
+}
+
+function renderApodStatus() {
+  if (!apodStatus) return;
+  apodThumbEl.hidden = true;
+  apodThumbEl.removeAttribute('src');
+  apodTitleEl.textContent = apodStatus === 'loading' ? 'Loading…' : 'APOD unavailable right now';
+  apodNoteEl.textContent =
+    apodStatus === 'loading'
+      ? 'reaching api.nasa.gov'
+      : 'offline or rate-limited — will retry automatically';
+  updateApodVisibility();
 }
 
 function renderApodCard(data, { stale = false } = {}) {
   apodData = data;
+  apodStatus = null;
+  if (apodRetryTimer) {
+    clearTimeout(apodRetryTimer);
+    apodRetryTimer = null;
+  }
   apodTitleEl.textContent = data.title || 'Untitled';
 
   const isVideo = data.media_type && data.media_type !== 'image';
@@ -488,6 +510,17 @@ function renderApodCard(data, { stale = false } = {}) {
   updateApodVisibility();
 }
 
+/* NASA sometimes sends a video instead of an image, and video URLs are
+   usually YouTube embeds — the guide's extra challenge. Normalize the
+   watch?v= / youtu.be / embed/ shapes to a plain embed URL. */
+function youtubeEmbedUrl(url) {
+  const id =
+    (url.match(/youtube\.com\/embed\/([\w-]+)/) ||
+      url.match(/[?&]v=([\w-]+)/) ||
+      url.match(/youtu\.be\/([\w-]+)/) || [])[1];
+  return id ? `https://www.youtube.com/embed/${id}?rel=0` : url;
+}
+
 function renderApodDialog(data) {
   $('#apod-heading').textContent = data.title || 'Untitled';
   $('#apod-dialog-meta').textContent =
@@ -497,13 +530,20 @@ function renderApodDialog(data) {
   media.textContent = '';
   const isVideo = data.media_type && data.media_type !== 'image';
 
-  if (isVideo) {
-    const a = document.createElement('a');
-    a.href = data.url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.textContent = "Watch today's video (opens in a new tab)";
-    media.append(a);
+  if (isVideo && data.url && data.url.includes('youtube')) {
+    const iframe = document.createElement('iframe');
+    iframe.src = youtubeEmbedUrl(data.url);
+    iframe.title = data.title || 'Astronomy Picture of the Day video';
+    iframe.allow =
+      'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allowFullscreen = true;
+    media.append(iframe);
+  } else if (isVideo) {
+    const video = document.createElement('video');
+    video.src = data.url || '';
+    video.controls = true;
+    video.preload = 'metadata';
+    media.append(video);
   } else {
     const img = document.createElement('img');
     img.src = data.url || '';
@@ -531,9 +571,41 @@ function renderApodDialog(data) {
   err.hidden = true;
 }
 
+async function loadApod() {
+  apodFetchBusy = true;
+  if (!apodData || !apodData.title) {
+    apodStatus = 'loading';
+    renderApodStatus();
+  }
+  const data = await fetchApod();
+  apodFetchBusy = false;
+  if (data) {
+    store.set(APOD_CACHE_KEY, data);
+    renderApodCard(data);
+  } else if (apodData && apodData.title) {
+    apodNoteEl.textContent = `${apodData.date} · offline — showing last saved`;
+  } else {
+    apodStatus = 'failed';
+    renderApodStatus();
+    scheduleApodRetry();
+  }
+}
+
+// DEMO_KEY rate-limit windows are hourly, so one slow retry is enough to
+// catch transient errors without burning quota.
+function scheduleApodRetry() {
+  if (apodRetryTimer || !settings.showApod) return;
+  if (apodData && apodData.title) return;
+  apodRetryTimer = setTimeout(() => {
+    apodRetryTimer = null;
+    if (settings.showApod && (!apodData || apodData.date !== todayISO())) void loadApod();
+  }, APOD_RETRY_DELAY);
+}
+
 function initApod() {
   updateApodVisibility();
   if (!settings.showApod) return;
+  if (apodFetchBusy || apodRetryTimer) return; // already working on it
 
   if (apodData && apodData.title) {
     renderApodCard(apodData, { stale: apodData.date !== todayISO() });
@@ -541,20 +613,17 @@ function initApod() {
 
   // Hit the network at most once per day to stay gentle on rate limits.
   if (!apodData || apodData.date !== todayISO()) {
-    void (async () => {
-      const data = await fetchApod();
-      if (data) {
-        store.set(APOD_CACHE_KEY, data);
-        renderApodCard(data);
-      } else if (apodData) {
-        apodNoteEl.textContent = `${apodData.date} · offline — showing last saved`;
-      }
-    })();
+    void loadApod();
   }
 }
 
 window.addEventListener('online', () => {
-  if (settings.showApod && (!apodData || apodData.date !== todayISO())) initApod();
+  if (!settings.showApod) return;
+  if (apodRetryTimer) {
+    clearTimeout(apodRetryTimer);
+    apodRetryTimer = null;
+  }
+  if (!apodFetchBusy && (!apodData || apodData.date !== todayISO())) void loadApod();
 });
 
 function setupApodUI() {

@@ -507,7 +507,9 @@ kbd {
 
 .apod-media { text-align: left; }
 
-.apod-media img {
+.apod-media img,
+.apod-media iframe,
+.apod-media video {
   display: block;
   width: 100%;
   border-radius: 14px;
@@ -515,10 +517,10 @@ kbd {
   background: var(--bg-raised);
 }
 
-.apod-media a {
-  display: inline-block;
-  margin-top: 14px;
-  color: var(--accent);
+.apod-media iframe,
+.apod-media video {
+  aspect-ratio: 16 / 9;
+  border: 0;
 }
 
 .apod-explain {
