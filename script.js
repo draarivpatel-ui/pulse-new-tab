@@ -700,7 +700,7 @@ function setupGlobalUI() {
     });
   }
 
-  // Keyboard shortcuts: "/" focuses search, "N" opens add-link.
+  // Keyboard shortcuts: "/" focuses search, "N" opens add-link, "T" toggles 12/24h clock.
   document.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const typing =
@@ -715,6 +715,11 @@ function setupGlobalUI() {
     } else if (e.key === 'n' || e.key === 'N') {
       e.preventDefault();
       openAddDialog();
+    } else if (e.key === 't' || e.key === 'T') {
+      e.preventDefault();
+      settings.hour24 = !settings.hour24;
+      saveSettings();
+      applySettings();
     }
   });
 }
