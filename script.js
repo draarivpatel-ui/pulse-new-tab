@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Pulse — custom new-tab page script (vanilla JS, no dependencies)
+   Pulse - custom new-tab page script (vanilla JS, no dependencies)
    Sections: storage, settings, clock, quick links, starfield canvas, APOD.
    ========================================================================== */
 
@@ -306,7 +306,7 @@ function setupAddForm() {
     };
 
     if (!name) return fail('Give the link a name.');
-    if (!url) return fail('That URL does not look valid — try something like example.com.');
+    if (!url) return fail('That URL does not look valid - try something like example.com.');
 
     if (links.some((l) => l.url.toLowerCase() === url.toLowerCase())) {
       return fail('That link is already in your grid.');
@@ -467,7 +467,7 @@ const starfield = (() => {
 const APOD_CACHE_KEY = 'pulse.apod.cache';
 const APOD_RETRY_DELAY = 90 * 1000;
 let apodData = store.get(APOD_CACHE_KEY, null);
-let apodStatus = null; // 'loading' | 'failed' — only used when no data is available
+let apodStatus = null; // 'loading' | 'failed' - only used when no data is available
 let apodRetryTimer = null;
 let apodFetchBusy = false;
 
@@ -520,7 +520,7 @@ function renderApodStatus() {
   apodNoteEl.textContent =
     apodStatus === 'loading'
       ? 'reaching api.nasa.gov'
-      : 'offline or rate-limited — will retry automatically';
+      : 'offline or rate-limited - will retry automatically';
   updateApodVisibility();
 }
 
@@ -551,7 +551,7 @@ function renderApodCard(data, { stale = false } = {}) {
 }
 
 /* NASA sometimes sends a video instead of an image, and video URLs are
-   usually YouTube embeds — the guide's extra challenge. Normalize the
+   usually YouTube embeds - the guide's extra challenge. Normalize the
    watch?v= / youtu.be / embed/ shapes to a plain embed URL. */
 function youtubeEmbedUrl(url) {
   const id =
@@ -623,7 +623,7 @@ async function loadApod() {
     store.set(APOD_CACHE_KEY, data);
     renderApodCard(data);
   } else if (apodData && apodData.title) {
-    apodNoteEl.textContent = `${apodData.date} · offline — showing last saved`;
+    apodNoteEl.textContent = `${apodData.date} · offline - showing last saved`;
   } else {
     apodStatus = 'failed';
     renderApodStatus();
@@ -684,7 +684,7 @@ function setupApodUI() {
     if (data) {
       renderApodDialog(data);
     } else {
-      err.textContent = 'Could not load that date — check your connection or try again later.';
+      err.textContent = 'Could not load that date - check your connection or try again later.';
     }
   });
 }

@@ -1,4 +1,4 @@
-# Pulse — a new tab page
+# Pulse - a new tab page
 
 My custom browser new-tab page: big clock, a personal greeting, Google search,
 and a quick-links grid you can edit (add/remove, saved in localStorage).
@@ -29,7 +29,7 @@ days embed the YouTube video (or a `<video>` player for direct files).
 ## Deploy
 
 The code is pushed to github.com/draarivpatel-ui/pulse-new-tab (plain static
-files — no build step, so no CI workflow is needed). Remaining manual step:
+files - no build step, so no CI workflow is needed). Remaining manual step:
 repo Settings → Pages → deploy from branch `main`.
 
 ## Try it

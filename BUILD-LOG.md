@@ -16,18 +16,18 @@ real browser (screenshot.png).
 Devlog moments for the Stardance project: each numbered step above is a
 devlog-sized chunk; attach screenshot.png (and later ones) to each.
 
-## 2026-10-24 — guide reconciliation pass
+## 2026-10-24 - guide reconciliation pass
 
 9. Checked the build against the mission guide section by section. The APOD
    feature turned out to be already real (fetch + card + dialog + date
-   picker + localStorage cache + offline fallback), not a cosmetic toggle —
+   picker + localStorage cache + offline fallback), not a cosmetic toggle -
    but two gaps showed up: one fallback endpoint is dead, and video days
    were only a link.
-10. Removed the go-apod.herokuapp.com fallback (it now 404s — Heroku free
+10. Removed the go-apod.herokuapp.com fallback (it now 404s - Heroku free
     tier shut down in 2022). api.nasa.gov with DEMO_KEY is the single
     endpoint, retried 3x with backoff; during today's live test it returned
     429 OVER_RATE_LIMIT, which is exactly the case the new card states
-    cover: "Loading…" while fetching, "APOD unavailable right now — will
+    cover: "Loading…" while fetching, "APOD unavailable right now - will
     retry automatically" after a total failure with no cache, one scheduled
     retry after 90 s, instant retry when the browser comes back online.
 11. Video handling now matches the guide (media_type image/video, plus the
@@ -40,5 +40,5 @@ devlog-sized chunk; attach screenshot.png (and later ones) to each.
 Verified this pass: `node --check script.js` clean; all 39 DOM ids referenced
 by the script exist in index.html; embed-URL helper tested against the three
 YouTube URL shapes; api.nasa.gov and go-apod probed live with curl (429 and
-404 respectively, as described above). Not verified in a real browser yet —
+404 respectively, as described above). Not verified in a real browser yet -
 worth a fresh screenshot once DEMO_KEY cools down.
