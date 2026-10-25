@@ -39,6 +39,12 @@ and visit it. To make it your real new-tab page: Chrome Settings → On startup 
 Open a specific page → add the file URL (or use a new-tab extension that loads
 a local file).
 
+## Why I built this
+
+I open a new tab maybe two hundred times a day, so the mission to build one
+was really a mission to build something I would actually keep installed. The
+NASA picture of the day and the editable quick links are the parts I use most.
+
 ## Honest AI note
 
 Built by AI coding agents (ZCode) under Aariv Patel's direction: Aariv set the
