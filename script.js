@@ -173,7 +173,7 @@ function quoteForDate(date) {
 function renderQuote() {
   const quote = quoteForDate(new Date());
   quoteTextEl.textContent = quote.text;
-  quoteAuthorEl.textContent = `\u2014 ${quote.author}`;
+  quoteAuthorEl.textContent = quote.author;
 }
 
 function scheduleQuoteRefresh() {
