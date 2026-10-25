@@ -89,6 +89,8 @@ const clockTimeEl = $('#clock-time');
 const clockMeridiemEl = $('#clock-meridiem');
 const clockSecondsEl = $('#clock-seconds');
 const dateEl = $('#date');
+const quoteTextEl = $('#quote-text');
+const quoteAuthorEl = $('#quote-author');
 const searchInput = $('#search-input');
 const linkGrid = $('#link-grid');
 const apodEl = $('#apod');
@@ -144,6 +146,44 @@ function updateDate() {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+/* ------------------------------ focus quote ------------------------------ */
+
+/* One quote per day, chosen from the local calendar date. No network calls. */
+const QUOTES = [
+  { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
+  { text: 'Imagination is more important than knowledge.', author: 'Albert Einstein' },
+  { text: 'Well done is better than well said.', author: 'Benjamin Franklin' },
+  { text: 'The journey of a thousand miles begins with a single step.', author: 'Lao Tzu' },
+  { text: 'The best way to predict the future is to invent it.', author: 'Alan Kay' },
+  { text: 'It is not in the stars to hold our destiny but in ourselves.', author: 'William Shakespeare' },
+  { text: 'Nothing in life is to be feared, it is only to be understood.', author: 'Marie Curie' },
+  { text: 'How wonderful it is that nobody need wait a single moment before starting to improve the world.', author: 'Anne Frank' },
+  { text: 'Not all those who wander are lost.', author: 'J.R.R. Tolkien' },
+  { text: 'We are what we repeatedly do. Excellence, then, is not an act, but a habit.', author: 'Will Durant' },
+];
+
+function quoteForDate(date) {
+  const local = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const days = Math.floor(local.getTime() / 86400000);
+  return QUOTES[((days % QUOTES.length) + QUOTES.length) % QUOTES.length];
+}
+
+function renderQuote() {
+  const quote = quoteForDate(new Date());
+  quoteTextEl.textContent = quote.text;
+  quoteAuthorEl.textContent = `\u2014 ${quote.author}`;
+}
+
+function scheduleQuoteRefresh() {
+  // Re-render just after local midnight so the quote turns over with the day.
+  const now = new Date();
+  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+  setTimeout(() => {
+    renderQuote();
+    scheduleQuoteRefresh();
+  }, nextMidnight - now);
 }
 
 /* ------------------------------ quick links ------------------------------ */
@@ -804,6 +844,8 @@ window.addEventListener('resize', () => {
 function init() {
   applySettings();
   updateDate();
+  renderQuote();
+  scheduleQuoteRefresh();
   tick();
   scheduleTicks();
   if (!Array.isArray(storedLinks)) saveLinks(); // persist defaults on first run
