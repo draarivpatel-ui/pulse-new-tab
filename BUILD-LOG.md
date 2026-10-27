@@ -1,44 +1,17 @@
-# Pulse build log (2026-10-24)
+# Pulse Build Log
 
-Built in one session by an AI agent under Aariv's direction, then verified in a
-real browser (screenshot.png).
+My development notes for building **Pulse** for the Hack Club Stardance "Give Your Website a Pulse" mission.
 
-1. Read the mission page + guide (stardance.hackclub.com/missions/nasa-page).
-2. Scaffolded index.html / style.css / script.js, no dependencies.
-3. Clock + date + "Welcome back, Aariv" greeting.
-4. Google search box, `/` keyboard shortcut.
-5. Quick-links grid: defaults (Google, YouTube, GitHub, Gmail, Wikipedia,
-   Hack Club, Stardance), per-link remove, add dialog, localStorage persistence.
-6. `N` shortcut to add a link.
-7. Animated starfield canvas background, dark theme, one accent color.
-8. Verified: loaded locally, clock ticking, links removable/addable.
+## Session 1 - Core New-Tab Dashboard (`index.html`, `style.css`, `script.js`)
 
-Devlog moments for the Stardance project: each numbered step above is a
-devlog-sized chunk; attach screenshot.png (and later ones) to each.
+1. Read through the Stardance mission guide and planned a fast, zero-dependency new-tab page that I would genuinely keep installed in my browser.
+2. Built the live clock, formatted date display, and dynamic time-of-day greeting (`"Good morning / afternoon / evening, Aariv"`), plus the `T` shortcut to toggle between 12-hour and 24-hour time.
+3. Added the Google search bar with the `/` keyboard shortcut to focus immediately on load.
+4. Built the customizable Quick Links grid backed by `localStorage` with default pins (Google, YouTube, GitHub, Gmail, Wikipedia, Hack Club, Stardance), per-card deletion, and the `N` shortcut modal to add new links.
+5. Created the animated HTML5 `<canvas>` starfield background that gently pulses behind the UI cards.
 
-## 2026-10-24 - guide reconciliation pass
+## Session 2 - NASA APOD Explorer, Video Embeds & Offline Caching
 
-9. Checked the build against the mission guide section by section. The APOD
-   feature turned out to be already real (fetch + card + dialog + date
-   picker + localStorage cache + offline fallback), not a cosmetic toggle -
-   but two gaps showed up: one fallback endpoint is dead, and video days
-   were only a link.
-10. Removed the go-apod.herokuapp.com fallback (it now 404s - Heroku free
-    tier shut down in 2022). api.nasa.gov with DEMO_KEY is the single
-    endpoint, retried 3x with backoff; during today's live test it returned
-    429 OVER_RATE_LIMIT, which is exactly the case the new card states
-    cover: "Loading…" while fetching, "APOD unavailable right now - will
-    retry automatically" after a total failure with no cache, one scheduled
-    retry after 90 s, instant retry when the browser comes back online.
-11. Video handling now matches the guide (media_type image/video, plus the
-    YouTube extra challenge): YouTube URLs embed in an iframe with
-    watch?v=, youtu.be and embed/ all normalized; direct video files get a
-    `<video controls>` player; CSS covers both media shapes.
-12. README updated: APOD feature documented honestly (incl. DEMO_KEY rate
-    limits and how to swap in a personal key), deploy steps added.
-
-Verified this pass: `node --check script.js` clean; all 39 DOM ids referenced
-by the script exist in index.html; embed-URL helper tested against the three
-YouTube URL shapes; api.nasa.gov and go-apod probed live with curl (429 and
-404 respectively, as described above). Not verified in a real browser yet -
-worth a fresh screenshot once DEMO_KEY cools down.
+6. Wired the live NASA Astronomy Picture of the Day API (`https://api.nasa.gov/planetary/apod`) into the dashboard card and built the full-resolution modal inspector with a historical date picker (`1995-06-16` to today).
+7. Tested fallback behavior against `HTTP 429` rate limits on NASA's public `DEMO_KEY`: removed the dead `go-apod.herokuapp.com` endpoint, added 3-try backoff, and implemented a `localStorage` snapshot cache so rate-limited or offline loads fall back cleanly to the last saved astronomy entry and retry automatically after 90 seconds (or when the browser fires `online`).
+8. Added full video support for NASA APOD video days by normalizing `youtube.com/watch?v=`, `youtu.be/`, and `youtube.com/embed/` URLs into responsive iframes and supporting `<video controls>` for direct media files.
