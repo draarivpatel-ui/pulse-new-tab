@@ -6,7 +6,6 @@
 
 I built **Pulse** for the Hack Club Stardance **"Give Your Website a Pulse"** mission. It is the custom browser new-tab page I use every day: a large live clock, a time-of-day personal greeting, a keyboard-first search bar, an editable quick-links grid saved in `localStorage`, a live **NASA Astronomy Picture of the Day (APOD)** explorer, and a lightweight 60fps starfield background rendered on an HTML5 `<canvas>`.
 
----
 
 ## Why I Built This
 
@@ -14,7 +13,6 @@ I open a new browser tab well over a hundred times a day while switching between
 
 When I tackled the Stardance "Give Your Website a Pulse" mission, I wanted to build a zero-dependency new-tab dashboard that loads in under 5 milliseconds from disk, lets me launch everything from the keyboard without touching the mouse, and pulls in NASA's Astronomy Picture of the Day with smart local caching so it still works when I am offline or when NASA's public API key hits rate limits.
 
----
 
 ## Features & How It Works Under the Hood
 
@@ -35,7 +33,6 @@ When I tackled the Stardance "Give Your Website a Pulse" mission, I wanted to bu
 ### 3. Procedural Starfield Canvas ("The Pulse")
 - Behind the glassmorphic UI cards, `<canvas id="pulse-canvas">` runs a lightweight `requestAnimationFrame` loop that renders drifting stars with sinusoidal alpha pulsing (`Math.sin(t * star.speed + star.phase)`), giving the page a calm nighttime atmosphere without spiking CPU usage.
 
----
 
 ## What Was Tricky to Build
 
@@ -44,7 +41,6 @@ When I tackled the Stardance "Give Your Website a Pulse" mission, I wanted to bu
 2. **Preventing Keyboard Shortcuts from Hijacking Form Inputs**:
    When I first wired the `/` and `N` global `keydown` listeners, typing an `n` or `/` inside the search input or the "Add Link" URL field triggered the hotkeys. I added an active-element guard that checks `event.target.matches("input, textarea, select")` and ignores modifier keys (`metaKey`, `ctrlKey`, `altKey`) so global shortcuts only fire when you aren't typing in a field.
 
----
 
 ## How to Run It or Set It as Your New Tab
 
@@ -57,7 +53,6 @@ When I tackled the Stardance "Give Your Website a Pulse" mission, I wanted to bu
 3. **Use as your browser startup / new-tab page**:
    - In Chrome / Brave / Arc: Go to **Settings -> On startup -> Open a specific page or set of pages** and add `https://aariv.me/pulse-new-tab/` (or your local `file://` path via a Custom New Tab URL extension).
 
----
 
 ## Project Files
 
@@ -65,7 +60,6 @@ When I tackled the Stardance "Give Your Website a Pulse" mission, I wanted to bu
 - `style.css` - Dark glassmorphic styling, responsive grid layout, and modal transitions
 - `script.js` - Clock ticker, keyboard shortcut router, `localStorage` quick-links CRUD, NASA APOD client with offline cache, and HTML5 canvas starfield
 - `screenshot.png` - Full-window screenshot of Pulse running in the browser
-- `BUILD-LOG.md` - Step-by-step development notes
 
 ## License
 
